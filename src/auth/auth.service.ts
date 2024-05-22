@@ -1,42 +1,42 @@
-import { BadRequestException, Injectable, } from '@nestjs/common';
-//import { JwtService } from '@nestjs/jwt';
-import { UserService } from '../user/user.service';
+import { BadRequestException, Injectable, Logger, } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import { MessagesHelper } from './helpers/message.helper';
-
+import { UserService } from 'src/user/user.service';
+import { RegisterUserDto } from 'src/user/dto/register.dto';
+import { JwtService } from '@nestjs/jwt';
+import { UserMessagehelper } from 'src/user/helpers/message.helpers';
 
 @Injectable()
 export class AuthService {
+    constructor(
+        private readonly userService: UserService,
+        private readonly jwtService: JwtService,
+    ) { }
+    private logger = new Logger(AuthService.name)//instancia dos loggs
 
 
-    Login(dto:LoginDto){
-
-        if(dto.login !== "teste@teste.com" || dto.password!== "teste@123"){
-            throw new BadRequestException(MessagesHelper.AUTH_LOGIN_NOT_FOUND)
-
+    async login(dto: LoginDto) {
+        this.logger.debug('login - started');
+        const user = await this.userService.getUserByLoginPassword(dto.login, dto.password)
+        if (user == null) {
+            throw new BadRequestException(MessagesHelper.AUTH_PASSWORD_OR_LOGIN_NOT_FOUND);
         }
-        return dto;
+        const tokenPayload = { email: user.email, sub: user._id };//dados do usuário
+        return {
+            email: user.email,
+            name: user.name,
+            token: this.jwtService.sign(tokenPayload, { secret: process.env.USER_JWT_SECRET_KEY })
+        }
     }
-    // private logger = new Logger(AuthService.name);
-
-    // constructor(
-    //     private readonly userService: UserService,
-    //     private readonly jwtService: JwtService
-    // ) {}
-
-    // async login(dto: LoginDto) {
-    //     this.logger.debug('login - started'); // Imprime no console da aplicação que o login foi iniciado 
-
-    //     const user = await this.userService.getUserByLogin(dto.login, dto.password);
-    //     if (user == null) {
-    //         throw new BadRequestException(MessagesHelper.AUTH_PASSWORD_OR_LOGIN_NOT_FOUND);
-    //     }
-    //     const tokenPayload = { email: user.email, sub: user._id }; // Payload com as informações do token
-
-    //     return {
-    //         email: user.email,
-    //         name: user.name,
-    //         token: this.jwtService.sign(tokenPayload, { secret: process.env.USER_JWT_SECRET_KEY })
-    //     };
-    // }
+    
+    async RegisterUser(dto: RegisterUserDto) {
+        this.logger.debug('register - started');
+        if (await this.userService.existsByEmail(dto.email)) {//Verifica se já existe um email cadastrado no sistema, e retorna o erro. 
+            {
+                throw new BadRequestException(UserMessagehelper.REGISTER_EXIST_EMAIL_ACCOUNT)
+            }
+        }
+        await this.userService.createUser(dto);
+    }
 }
+

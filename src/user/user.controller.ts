@@ -1,34 +1,44 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, BadRequestException } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { RegisterUserDto } from './dto/register.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { BaseExceptionFilter } from '@nestjs/core';
+import { UserMessagehelper } from './helpers/message.helpers';
+
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  create(@Body() dto: RegisterUserDto) {
+    return this.userService.createUser(dto);
   }
-
   @Get()
   findAll() {
-    return this.userService.findAll();
+    return this.userService.findUser();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+ async findOne(@Param('id') id: string) {
+    const user = await this.userService.findUserById(id);
+    if(!user){
+      throw new BadRequestException(UserMessagehelper.GET_USER_NOT_FOUND)
+    }
+    return {
+      name: user.name,
+      email: user.email,
+      id: user._id,
+    };
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+    return this.userService.UpdateUser(id, dto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+    return this.userService.RemoveUser(id);
   }
 }

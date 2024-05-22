@@ -1,26 +1,77 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { RegisterUserDto } from './dto/register.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { User, UserDocument } from './schema/user.schema';
+import * as CryptoJS from 'crypto-js';
+import { UserMessagehelper } from './helpers/message.helpers';
 @Injectable()
 export class UserService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) { }
+  private logger = new Logger(UserService.name)//instancia dos loggs
+
+  async createUser(dto: RegisterUserDto) {
+    this.logger.debug('register - started');
+    dto.password = CryptoJS.AES.encrypt(dto.password,//encrypt, criptografa a senha do usuario.
+      process.env.USER_CYPHER_SECRET_KEY,).toString();
+    const createdUser = new this.UserModel(dto);
+    await createdUser.save();
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async getUserByLoginPassword(email: string, password: string): Promise<UserDocument | null> {
+    const user = await this.UserModel.findOne({ email }) as UserDocument;
+    if (user) {
+      const bytes = CryptoJS.AES.decrypt(user.password, process.env.USER_CYPHER_SECRET_KEY); //Retorna a senha descriptografada ainda em bytes
+      const savedPassword = bytes.toString(CryptoJS.enc.Utf8);
+
+      if (password === savedPassword) {
+        return user;
+      }
+    }
+    return null;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findUser() {
+    this.logger.debug('findUsers - started');
+    return await this.UserModel.find();
+  }
+  async findUserById(id: string) {
+
+    this.logger.debug('findUserById - started');
+    return await this.UserModel.findById(id);
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async UpdateUser(id: string, updateUserDto: UpdateUserDto) {
+    this.logger.debug('UpdateUser - started');
+
+    return await this.UserModel.findByIdAndUpdate(
+      {
+        _id: id
+      }, {
+
+      updateUserDto
+    },
+      {
+        new: true
+      }
+    );
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async RemoveUser(id: string) {
+    this.logger.debug('DeleteUser - started');
+    return await this.UserModel.findByIdAndDelete(
+      { _id: id }
+    ).exec();
   }
+
+
+  async existsByEmail(email: string) {
+    const result = await this.UserModel.findOne({ email });
+    if (result) {
+      return true;
+    }
+    return false;
+  }
+
 }

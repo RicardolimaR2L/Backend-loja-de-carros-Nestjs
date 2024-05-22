@@ -4,11 +4,10 @@ import {  ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ['debug', 'error', 'log', 'warn']
+    logger: ['debug', 'error', 'log', 'warn']//logs permitidos na aplicação
 
   });
   app.enableCors();
-  //app.enableCors({origin:'loja-de-carros-web.vercel.app'});
   app.useGlobalPipes(
     new ValidationPipe({
       transform:true,

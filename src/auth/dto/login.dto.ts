@@ -6,7 +6,7 @@ export class LoginDto {
     @IsEmail({}, { message: MessagesHelper.AUTH_LOGIN_NOT_FOUND })
     login: string;
 
-    @IsNotEmpty({ message: MessagesHelper.AUTH_PASSWORD_NOT_FOUND })
+    @IsNotEmpty({message: MessagesHelper.AUTH_PASSWORD_OR_LOGIN_NOT_FOUND})
     password: string;
     
 } 
