@@ -1,8 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, BadRequestException, Put } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RegisterUserDto } from './dto/register.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { BaseExceptionFilter } from '@nestjs/core';
 import { UserMessagehelper } from './helpers/message.helpers';
 
 
@@ -32,9 +31,10 @@ export class UserController {
     };
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.userService.UpdateUser(id, dto);
+  @Put('updateUser/:id') //inclusão do id como parâmetro de rota 
+  async updateUser(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+    
+    await this.userService.updateUser(id, dto);
   }
 
   @Delete(':id')

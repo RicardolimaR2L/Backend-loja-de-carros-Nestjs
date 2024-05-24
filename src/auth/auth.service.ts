@@ -29,14 +29,15 @@ export class AuthService {
         }
     }
     
+    
     async RegisterUser(dto: RegisterUserDto) {
         this.logger.debug('register - started');
-        if (await this.userService.existsByEmail(dto.email)) {//Verifica se já existe um email cadastrado no sistema, e retorna o erro. 
+        if (await this.userService.existsByEmail(dto.email)) {//Verifica se já existe um email cadastrado no sistema, e retorna o erro caso tenha. 
             {
                 throw new BadRequestException(UserMessagehelper.REGISTER_EXIST_EMAIL_ACCOUNT)
             }
         }
         await this.userService.createUser(dto);
     }
+   
 }
-

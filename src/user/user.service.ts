@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { RegisterUserDto } from './dto/register.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Model } from 'mongoose';
+import { Model} from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './schema/user.schema';
 import * as CryptoJS from 'crypto-js';
 import { UserMessagehelper } from './helpers/message.helpers';
+
 @Injectable()
 export class UserService {
   constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) { }
@@ -36,26 +37,18 @@ export class UserService {
     this.logger.debug('findUsers - started');
     return await this.UserModel.find();
   }
-  async findUserById(id: string) {
-
+  async findUserById(id:any) {
     this.logger.debug('findUserById - started');
     return await this.UserModel.findById(id);
   }
 
-  async UpdateUser(id: string, updateUserDto: UpdateUserDto) {
+
+  async updateUser(id: string, dto: UpdateUserDto){
     this.logger.debug('UpdateUser - started');
-
-    return await this.UserModel.findByIdAndUpdate(
-      {
-        _id: id
-      }, {
-
-      updateUserDto
-    },
-      {
-        new: true
-      }
-    );
+    if(!id){
+      throw new BadRequestException(UserMessagehelper.UPDATE_USER_FAILS)
+    }
+    return await this.UserModel.findByIdAndUpdate(id, dto);
   }
 
   async RemoveUser(id: string) {
@@ -65,7 +58,7 @@ export class UserService {
     ).exec();
   }
 
-
+  
   async existsByEmail(email: string) {
     const result = await this.UserModel.findOne({ email });
     if (result) {
@@ -73,5 +66,6 @@ export class UserService {
     }
     return false;
   }
-
+  
 }
+
